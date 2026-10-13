@@ -275,8 +275,14 @@ function saveState(){localStorage.setItem('hw_state',JSON.stringify(STATE))}
 function loadState(){
   const s=localStorage.getItem('hw_state');
   if(s){
-    const d=JSON.parse(s);
-    Object.assign(STATE,d);
+    try{
+      const d=JSON.parse(s);
+      if(d && typeof d==='object'){
+        Object.assign(STATE,d);
+      }
+    }catch(e){
+      try{localStorage.removeItem('hw_state')}catch(_){}
+    }
     
     // Ensure all default best scores exist (backwards compatibility for old saved states)
     const defaultBestScores = {space:0,flappy:0,asteroid:0,whack:0,dino:0,zombie:0,snake:0};
