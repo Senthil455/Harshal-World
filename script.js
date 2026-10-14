@@ -3110,18 +3110,24 @@ const filterBtns = document.querySelectorAll('.filter-btn');
 const noResults = document.getElementById('noResults');
 
 function filterGames() {
-    const searchTerm = gameSearch.value.toLowerCase();
-    const activeFilter = document.querySelector('.filter-btn.active').dataset.filter;
+    const searchTerm = (gameSearch.value || '').toLowerCase().trim();
+    const activeBtn = document.querySelector('.filter-btn.active');
+    const activeFilter = activeBtn ? activeBtn.dataset.filter : 'all';
     const gameCards = document.querySelectorAll('.game-card'); 
     let visibleCount = 0;
 
     gameCards.forEach(card => {
-        const gameName = card.querySelector('.game-name').textContent.toLowerCase();
+        const nameEl = card.querySelector('.game-name');
+        const descEl = card.querySelector('.game-desc');
+        const gameName = nameEl ? nameEl.textContent.toLowerCase() : '';
+        const gameDesc = descEl ? descEl.textContent.toLowerCase() : '';
         const gameCategory = card.dataset.category || 'all';
 
-        // Check if it matches Search AND Filter
-        const matchesSearch = gameName.includes(searchTerm);
-        const matchesFilter = (activeFilter === 'all' || gameCategory === activeFilter);
+        // Match against title plus description so bear, runner, rocks all work.
+        const haystack = (gameName + ' ' + gameDesc + ' ' + gameCategory).toLowerCase();
+        const matchesSearch = !searchTerm || haystack.includes(searchTerm);
+        // Multiplayer has no games yet, fall back to showing all instead of a dead end.
+        const matchesFilter = (activeFilter === 'all' || activeFilter === 'multiplayer' || gameCategory === activeFilter);
 
         if (matchesSearch && matchesFilter) {
             card.classList.remove('hidden');
