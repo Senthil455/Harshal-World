@@ -2627,10 +2627,12 @@ const SPIN_WHEEL = {
   },
   
   showResult() {
-    // Calculate which game was selected
+    // Canvas angle 0 points east, but the pointer sits at the top (north).
+    // Account for that offset so the announced game matches the visual winner.
     const sliceAngle = (Math.PI * 2) / this.games.length;
-    const normalizedRotation = (this.currentRotation % (Math.PI * 2) + Math.PI * 2) % (Math.PI * 2);
-    const selectedIndex = Math.floor(((Math.PI * 2) - normalizedRotation) / sliceAngle) % this.games.length;
+    const POINTER = -Math.PI / 2;
+    const angle = ((POINTER - this.currentRotation) % (Math.PI * 2) + Math.PI * 2) % (Math.PI * 2);
+    const selectedIndex = Math.floor(angle / sliceAngle) % this.games.length;
     
     this.selectedGame = selectedIndex;
     const game = this.games[selectedIndex];
