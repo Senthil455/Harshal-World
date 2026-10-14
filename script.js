@@ -2696,13 +2696,16 @@ GAMES.zombie = {
   shoot(e) {
     if(!gameRunning || gamePaused) return;
     e.preventDefault();
-    const W = gameCanvas.width, H = gameCanvas.height;
     const rect = gameCanvas.getBoundingClientRect();
+    // Map CSS pixels to canvas backing pixels so aim stays correct
+    // after resize or on high-DPI screens.
+    const scaleX = rect.width ? (gameCanvas.width / rect.width) : 1;
+    const scaleY = rect.height ? (gameCanvas.height / rect.height) : 1;
     let cx, cy;
     if(e.touches && e.touches.length > 0) {
-      cx = e.touches[0].clientX - rect.left; cy = e.touches[0].clientY - rect.top;
+      cx = (e.touches[0].clientX - rect.left) * scaleX; cy = (e.touches[0].clientY - rect.top) * scaleY;
     } else {
-      cx = e.clientX - rect.left; cy = e.clientY - rect.top;
+      cx = (e.clientX - rect.left) * scaleX; cy = (e.clientY - rect.top) * scaleY;
     }
     const dx = cx - (this.player.x + 16);
     const dy = cy - (this.player.y + 16);
