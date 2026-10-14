@@ -360,7 +360,7 @@ img.emoji{height:1.15em;width:1.15em;margin:0 .06em;vertical-align:-0.15em;displ
 .spin-close-btn{position:absolute;top:15px;right:15px;background:rgba(255,255,255,0.1);border:1px solid var(--border);color:var(--text2);width:40px;height:40px;border-radius:50%;cursor:pointer;font-size:1.2rem;transition:all .2s;font-family:'Orbitron',sans-serif}
 .spin-close-btn:hover{background:rgba(255,255,255,0.2);color:var(--text)}
 
-.spin-wheel-wrapper{position:relative;width:400px;height:400px;display:flex;align-items:center;justify-content:center}
+.spin-wheel-wrapper{position:relative;width:min(400px,84vw);height:min(400px,84vw);display:flex;align-items:center;justify-content:center}
 
 .spin-indicator{position:absolute;top:-10px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:15px solid transparent;border-right:15px solid transparent;border-top:25px solid var(--yellow);z-index:10;filter:drop-shadow(0 0 8px var(--yellow))}
 
@@ -1190,4 +1190,9 @@ body.light-theme .notification { background: rgba(248,250,255,.96); }
     right: 1.5rem;
     font-size: 1rem;
   }
+}
+@media(max-width:600px){
+  .tutorial-grid{grid-template-columns:1fr 1fr}
+  .tutorial-key-icon{width:64px;height:40px;font-size:.85rem}
+  .spin-container{padding:1.2rem;gap:1.2rem}
 }

@@ -663,9 +663,18 @@ function updateDinoMobileLayout(){
   if(dinoMobileHint)dinoMobileHint.hidden=!enabled;
 }
 
+let canvasDpr=1;
+function gameW(){return gameCanvas._cssW||(typeof gameCanvasWrap!=='undefined'?gameCanvasWrap.clientWidth:0)||320}
+function gameH(){return gameCanvas._cssH||(typeof gameCanvasWrap!=='undefined'?gameCanvasWrap.clientHeight:0)||240}
 function resizeCanvas(){
-  gameCanvas.width=gameCanvasWrap.clientWidth;
-  gameCanvas.height=gameCanvasWrap.clientHeight;
+  const dpr=Math.min(2,window.devicePixelRatio||1);
+  canvasDpr=dpr;
+  const cssW=gameCanvasWrap.clientWidth||window.innerWidth;
+  const cssH=gameCanvasWrap.clientHeight||window.innerHeight;
+  gameCanvas._cssW=cssW;gameCanvas._cssH=cssH;
+  gameCanvas.width=Math.floor(cssW*dpr);
+  gameCanvas.height=Math.floor(cssH*dpr);
+  try{gCtx.setTransform(dpr,0,0,dpr,0,0)}catch(e){}
   updateDinoMobileLayout();
 }
 function stopGame(){
@@ -853,7 +862,7 @@ document.getElementById('fireBtn').addEventListener('touchend',e=>{e.preventDefa
     thumb.style.left=(pct*100)+'%';
     // Move spaceship proportionally
     if(currentGame==='space'&&GAMES.space.player&&gameRunning){
-      const W=gameCanvas.width;
+      const W=gameW();
       GAMES.space.player.x=pct*(W-GAMES.space.player.w);
     }
   }
@@ -947,7 +956,7 @@ GAMES.space={
   player:null,lastMilestone:0,surpriseFlash:0,surpriseFlashColor:'#fff',freeze:0,enemyBullets:[],
 
   start(){
-    const W=gameCanvas.width,H=gameCanvas.height;
+    const W=gameW(),H=gameH();
     this.score=0;this.lives=5;this.gameTime=0;this.diffLevel=0;this.bombs=0;
     this.tripleShot=false;this.tripleShotTimer=0;this.bigBullet=false;this.bigBulletTimer=0;
     this.bullets=[];this.enemies=[];this.particles=[];this.powerups=[];this.enemyBullets=[];this.freeze=0;
@@ -1001,7 +1010,7 @@ GAMES.space={
   },
 
   spawnEnemy(){
-    const W=gameCanvas.width,s=getDiffSettings(this.diffLevel);
+    const W=gameW(),s=getDiffSettings(this.diffLevel);
     const spd=s.speed+Math.random()*0.3;
     const types=['straight','zigzag','orbit','flanker'];
     const mt=types[Math.floor(Math.random()*types.length)];
@@ -1037,7 +1046,7 @@ GAMES.space={
   },
 
   spawnPowerUp(){
-    const W=gameCanvas.width;
+    const W=gameW();
     const types=Object.keys(POWERUP_TYPES);
     const type=types[Math.floor(Math.random()*types.length)];
     const info=POWERUP_TYPES[type];
@@ -1056,7 +1065,7 @@ GAMES.space={
   },
 
   update(){
-    const W=gameCanvas.width,H=gameCanvas.height,p=this.player;
+    const W=gameW(),H=gameH(),p=this.player;
     this.gameTime++;
 
     if(keys['b']||keys['B']){this.useBomb();keys['b']=false;keys['B']=false}
@@ -1240,7 +1249,7 @@ GAMES.space={
   },
 
   draw(){
-    const W=gameCanvas.width,H=gameCanvas.height,p=this.player;
+    const W=gameW(),H=gameH(),p=this.player;
     const bg=gCtx.createLinearGradient(0,0,0,H);
     bg.addColorStop(0,'#020209');bg.addColorStop(1,'#1a0533');
     gCtx.fillStyle=bg;gCtx.fillRect(0,0,W,H);
@@ -1334,9 +1343,9 @@ GAMES.space={
 
     if(this.freeze>0){
       gCtx.fillStyle=`rgba(6,182,212,${Math.sin(this.gameTime*0.1)*0.3+0.4})`;
-      gCtx.fillRect(0,0,gameCanvas.width,gameCanvas.height);
+      gCtx.fillRect(0,0,gameW(),gameH());
       gCtx.font='bold 32px Orbitron,monospace';gCtx.fillStyle='#06B6D4';gCtx.textAlign='center';
-      gCtx.fillText('❄️ FROZEN ❄️',gameCanvas.width/2,gameCanvas.height/2);
+      gCtx.fillText('❄️ FROZEN ❄️',gameW()/2,gameH()/2);
     }
 
     this.powerups.forEach(pu=>{
@@ -1399,7 +1408,7 @@ GAMES.flappy = {
   waitingForStart: true, // Prevents instant falling
 
   start() {
-    const W = gameCanvas.width, H = gameCanvas.height;
+    const W = gameW(), H = gameH();
     // Reset all variables
     this.bird = { x: W * 0.22, y: H / 2, vy: 0, r: 14, rot: 0 };
     this.pipes = []; this.score = 0; this.started = false; this.dead = false; 
@@ -1453,7 +1462,7 @@ GAMES.flappy = {
   },
 
   spawnPowerUp(type) {
-    const W = gameCanvas.width, H = gameCanvas.height;
+    const W = gameW(), H = gameH();
     const validTypes = ['heart', 'shield', 'electric'];
     const pType = validTypes.includes(type) ? type : validTypes[Math.floor(Math.random() * validTypes.length)];
     const randPipe = this.pipes[Math.floor(Math.random() * Math.min(3, this.pipes.length))];
@@ -1486,7 +1495,7 @@ GAMES.flappy = {
   },
 
   updateGame() {
-    const W = gameCanvas.width, H = gameCanvas.height, b = this.bird;
+    const W = gameW(), H = gameH(), b = this.bird;
     if (!this.started) return;
 
     // The "Waiting" Logic - keeps game frozen until first flap
@@ -1600,7 +1609,7 @@ GAMES.flappy = {
     gameLoop=requestAnimationFrame(()=>this.loop());
   },
   draw(){
-    const W=gameCanvas.width,H=gameCanvas.height,b=this.bird;
+    const W=gameW(),H=gameH(),b=this.bird;
     const sky=gCtx.createLinearGradient(0,0,0,H);sky.addColorStop(0,'#0a4d7a');sky.addColorStop(0.5,'#1a8ab5');sky.addColorStop(1,'#0e6e9e');
     gCtx.fillStyle=sky;gCtx.fillRect(0,0,W,H);
     gCtx.fillStyle='rgba(255,255,255,.12)';
@@ -1683,7 +1692,7 @@ GAMES.flappy = {
 GAMES.asteroid={
   player:null,asteroids:[],particles:[],score:0,lives:3,frameCount:0,stars:[],
   start(){
-    const W=gameCanvas.width,H=gameCanvas.height;
+    const W=gameW(),H=gameH();
     this.player={x:W/2,y:H-80,r:14,speed:4.5,invincible:0,trail:[]};
     this.asteroids=[];this.particles=[];this.score=0;this.lives=3;this.frameCount=0;
     this.stars=Array.from({length:100},()=>({x:Math.random()*W,y:Math.random()*H,s:Math.random()*2+.3,v:Math.random()*1.5+.5,twinkle:Math.random()}));
@@ -1692,7 +1701,7 @@ GAMES.asteroid={
   },
   loop(){if(!gameRunning)return;if(!gamePaused)this.update();this.draw();gameLoop=requestAnimationFrame(()=>this.loop())},
   update(){
-    const W=gameCanvas.width,H=gameCanvas.height,p=this.player;
+    const W=gameW(),H=gameH(),p=this.player;
     this.frameCount++;const speed=Math.min(2+this.frameCount/800,5.5);
     if(keys['ArrowLeft']||keys['a']||keys['A'])p.x-=p.speed;
     if(keys['ArrowRight']||keys['d']||keys['D'])p.x+=p.speed;
@@ -1728,7 +1737,7 @@ GAMES.asteroid={
     this.particles=this.particles.filter(pt=>{pt.x+=pt.vx;pt.y+=pt.vy;pt.life--;pt.vx*=.92;pt.vy*=.92;return pt.life>0});
   },
   draw(){
-    const W=gameCanvas.width,H=gameCanvas.height,p=this.player;
+    const W=gameW(),H=gameH(),p=this.player;
     gCtx.fillStyle='#050510';gCtx.fillRect(0,0,W,H);
     this.stars.forEach(s=>{const a=.3+Math.sin(s.twinkle*Math.PI*2)*.2;gCtx.fillStyle=`rgba(200,200,255,${a})`;gCtx.beginPath();gCtx.arc(s.x,s.y,s.s,0,Math.PI*2);gCtx.fill()});
     p.trail.forEach((t,i)=>{const a=i/p.trail.length*.5;gCtx.shadowColor='#A855F7';gCtx.shadowBlur=14;gCtx.fillStyle=`rgba(168,85,247,${a})`;gCtx.beginPath();gCtx.arc(t.x,t.y,p.r*(i/p.trail.length),0,Math.PI*2);gCtx.fill();gCtx.shadowBlur=0});
@@ -1801,7 +1810,7 @@ GAMES.whack={
   },
   loop(){if(!gameRunning)return;if(!gamePaused)this.update();this.draw();gameLoop=requestAnimationFrame(()=>this.loop())},
   update(){
-    const W=gameCanvas.width,H=gameCanvas.height;
+    const W=gameW(),H=gameH();
     const cols=3,rows=3,pw=Math.min(W,500),ph=Math.min(H-40,400);
     const ox=(W-pw)/2,oy=(H-ph)/2+20,cw=pw/cols,ch=ph/rows;
     this.holes.forEach((h,i)=>{
@@ -1820,7 +1829,7 @@ GAMES.whack={
     });
   },
   draw(){
-    const W=gameCanvas.width,H=gameCanvas.height;
+    const W=gameW(),H=gameH();
     const bg=gCtx.createLinearGradient(0,0,0,H);bg.addColorStop(0,'#1a5a0f');bg.addColorStop(0.5,'#2d8a22');bg.addColorStop(1,'#1a5a0f');
     gCtx.fillStyle=bg;gCtx.fillRect(0,0,W,H);
     this.holes.forEach(h=>{
@@ -1891,7 +1900,7 @@ GAMES.dino=(function(){
   function rr(ctx,x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.lineTo(x+w-r,y);ctx.arcTo(x+w,y,x+w,y+r,r);ctx.lineTo(x+w,y+h-r);ctx.arcTo(x+w,y+h,x+w-r,y+h,r);ctx.lineTo(x+r,y+h);ctx.arcTo(x,y+h,x,y+h-r,r);ctx.lineTo(x,y+r);ctx.arcTo(x,y,x+r,y,r);ctx.closePath();}
 
   function reset(){
-    W=gameCanvas.width; H=gameCanvas.height;
+    W=gameW(); H=gameH();
     groundY=H-getGroundOffset();
     hiScore=STATE.bestScores?.dino||0;
     score=0; frameCount=0; gameSpeed=5; maxSpeed=15;
@@ -2251,7 +2260,7 @@ GAMES.dino=(function(){
   // --- draw ---
   function draw(){
     const ctx=gCtx;
-    W=gameCanvas.width;H=gameCanvas.height;
+    W=gameW();H=gameH();
     groundY=H-getGroundOffset();
 
     ctx.save();
@@ -2399,7 +2408,7 @@ GAMES.dino=(function(){
 gameCanvas.addEventListener('click',e=>{
   if(currentGame==='whack'&&gameRunning&&!gamePaused){
     const r=gameCanvas.getBoundingClientRect();
-    const sx=gameCanvas.width/r.width,sy=gameCanvas.height/r.height;
+    const sx=gameW()/r.width,sy=gameH()/r.height;
     GAMES.whack.click((e.clientX-r.left)*sx,(e.clientY-r.top)*sy);
   }
 });
@@ -2407,7 +2416,7 @@ gameCanvas.addEventListener('touchstart',e=>{
   if(currentGame==='whack'&&gameRunning&&!gamePaused){
     e.preventDefault();
     const r=gameCanvas.getBoundingClientRect(),t=e.touches[0];
-    const sx=gameCanvas.width/r.width,sy=gameCanvas.height/r.height;
+    const sx=gameW()/r.width,sy=gameH()/r.height;
     GAMES.whack.click((t.clientX-r.left)*sx,(t.clientY-r.top)*sy);
   }
 },{passive:false});
@@ -2676,7 +2685,7 @@ GAMES.zombie = {
   score: 0, lives: 3, gameTime: 0, player: null, bullets: [], zombies: [], particles: [], lastShot: 0,
 
   start() {
-    const W = gameCanvas.width, H = gameCanvas.height;
+    const W = gameW(), H = gameH();
     this.score = 0; this.lives = 3; this.gameTime = 0;
     this.bullets = []; this.zombies = []; this.particles = [];
     this.player = { x: W/2, y: H/2, w: 32, h: 32, vx: 0, vy: 0, speed: 4 };
@@ -2696,13 +2705,14 @@ GAMES.zombie = {
   shoot(e) {
     if(!gameRunning || gamePaused) return;
     e.preventDefault();
-    const W = gameCanvas.width, H = gameCanvas.height;
     const rect = gameCanvas.getBoundingClientRect();
+    const scaleX = rect.width ? (gameW() / rect.width) : 1;
+    const scaleY = rect.height ? (gameH() / rect.height) : 1;
     let cx, cy;
     if(e.touches && e.touches.length > 0) {
-      cx = e.touches[0].clientX - rect.left; cy = e.touches[0].clientY - rect.top;
+      cx = (e.touches[0].clientX - rect.left) * scaleX; cy = (e.touches[0].clientY - rect.top) * scaleY;
     } else {
-      cx = e.clientX - rect.left; cy = e.clientY - rect.top;
+      cx = (e.clientX - rect.left) * scaleX; cy = (e.clientY - rect.top) * scaleY;
     }
     const dx = cx - (this.player.x + 16);
     const dy = cy - (this.player.y + 16);
@@ -2713,7 +2723,7 @@ GAMES.zombie = {
   },
 
   spawnZombie() {
-    const W = gameCanvas.width, H = gameCanvas.height;
+    const W = gameW(), H = gameH();
     let x, y;
     if(Math.random() < 0.5) {
       x = Math.random() < 0.5 ? -30 : W + 30;
@@ -2733,7 +2743,7 @@ GAMES.zombie = {
   },
 
   update() {
-    const W = gameCanvas.width, H = gameCanvas.height, p = this.player;
+    const W = gameW(), H = gameH(), p = this.player;
     this.gameTime++;
 
     let dx = 0, dy = 0;
@@ -2799,12 +2809,12 @@ GAMES.zombie = {
   },
 
   draw() {
-    gCtx.fillStyle = '#111'; gCtx.fillRect(0, 0, gameCanvas.width, gameCanvas.height);
+    gCtx.fillStyle = '#111'; gCtx.fillRect(0, 0, gameW(), gameH());
     
     // Grid lines for zombie mode
     gCtx.strokeStyle = '#222'; gCtx.lineWidth = 2;
-    for(let x=0; x<gameCanvas.width; x+=50) { gCtx.beginPath(); gCtx.moveTo(x,0); gCtx.lineTo(x,gameCanvas.height); gCtx.stroke(); }
-    for(let y=0; y<gameCanvas.height; y+=50) { gCtx.beginPath(); gCtx.moveTo(0,y); gCtx.lineTo(gameCanvas.width,y); gCtx.stroke(); }
+    for(let x=0; x<gameW(); x+=50) { gCtx.beginPath(); gCtx.moveTo(x,0); gCtx.lineTo(x,gameH()); gCtx.stroke(); }
+    for(let y=0; y<gameH(); y+=50) { gCtx.beginPath(); gCtx.moveTo(0,y); gCtx.lineTo(gameW(),y); gCtx.stroke(); }
 
     const p = this.player;
     const cx = p.x + p.w / 2, cy = p.y + p.h / 2;
@@ -2847,7 +2857,7 @@ GAMES.zombie = {
     // Bottom-left decorations for Zombie Shooter
     gCtx.save();
     gCtx.font='45px serif';gCtx.textAlign='left';gCtx.globalAlpha=0.5;
-    gCtx.fillText('🪨 🪨',20,gameCanvas.height-20);
+    gCtx.fillText('🪨 🪨',20,gameH()-20);
     gCtx.globalAlpha=1;gCtx.restore();
   },
 
@@ -2949,11 +2959,11 @@ GAMES.snake = {
   spawnFood(){
 
     const cols = Math.floor(
-      gameCanvas.width / this.gridSize
+      gameW() / this.gridSize
     );
 
     const rows = Math.floor(
-      gameCanvas.height / this.gridSize
+      gameH() / this.gridSize
     );
 
     this.food = {
@@ -2979,11 +2989,11 @@ GAMES.snake = {
     if(this.direction === 'RIGHT') head.x++;
 
     const cols = Math.floor(
-      gameCanvas.width / this.gridSize
+      gameW() / this.gridSize
     );
 
     const rows = Math.floor(
-      gameCanvas.height / this.gridSize
+      gameH() / this.gridSize
     );
 
     // Wall collision
@@ -3042,8 +3052,8 @@ GAMES.snake = {
     ctx.fillRect(
       0,
       0,
-      gameCanvas.width,
-      gameCanvas.height
+      gameW(),
+      gameH()
     );
 
     // Food
@@ -3082,7 +3092,7 @@ GAMES.snake = {
     ctx.fillText(
       '🐍',
       20,
-      gameCanvas.height-20
+      gameH()-20
     );
 
     ctx.restore();
