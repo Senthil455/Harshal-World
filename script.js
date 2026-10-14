@@ -2439,14 +2439,40 @@ gameCanvas.addEventListener('touchstart',e=>{
 
 // ===== TWEMOJI AUTO-PARSE =====
 function parseEmoji(el){if(typeof twemoji!=='undefined')twemoji.parse(el||document.body,{folder:'svg',ext:'.svg'});}
-// MutationObserver: auto-parse any newly added DOM nodes
+function hasEmoji(text){if(!text)return false;for(let i=0;i<text.length;i++){const c=text.codePointAt(i);if(c>0x2500)return true;if(c>0xD800&&c<0xE000)i++}return false}
+// MutationObserver: parse only subtrees that actually received emoji,
+// instead of re-scanning the whole page on every score tick.
 (function(){
-  let parseTimer=null;
-  const observer=new MutationObserver(()=>{
+  let parseTimer=null,pending=[];
+  const observer=new MutationObserver((mutations)=>{
+    for(const m of mutations){
+      if(m.target && m.target.closest && m.target.closest('img.twemoji')) continue;
+      if(m.type==='characterData'){
+        if(!hasEmoji(m.target.textContent)) continue;
+        const host=m.target.parentElement||document.body;
+        if(!pending.includes(host)) pending.push(host);
+      }else{
+        for(const node of m.addedNodes){
+          if(node.nodeType!==1) continue;
+          if(node.matches&&node.matches('img.twemoji')) continue;
+          const text=node.textContent||'';
+          if(node.classList&&(node.classList.contains('float-popup')||node.classList.contains('confetti-piece'))) continue;
+          if(!hasEmoji(text)) continue;
+          pending.push(node);
+        }
+      }
+    }
+    if(!pending.length) return;
     if(parseTimer)clearTimeout(parseTimer);
-    parseTimer=setTimeout(()=>parseEmoji(document.body),50);
+    parseTimer=setTimeout(()=>{
+      const batch=pending;pending=[];
+      for(const el of batch){try{parseEmoji(el)}catch(e){}}
+    },80);
   });
-  observer.observe(document.body,{childList:true,subtree:true,characterData:true});
+  const watchIds=['notificationBox','achievement-toast-container','leaderboardList','achievementsList','spinResultModal','gameOverOverlay'];
+  const targets=watchIds.map(id=>document.getElementById(id)).filter(Boolean);
+  if(!targets.length) targets.push(document.body);
+  for(const t of targets){try{observer.observe(t,{childList:true,subtree:true,characterData:true})}catch(e){}}
   // Initial parse
   if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',()=>parseEmoji())}else{parseEmoji()}
 })();
