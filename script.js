@@ -46,11 +46,18 @@ const GAME_NAMES = {space:'SPACE SHOOTER',flappy:'FLAPPY BIRD',asteroid:'ASTEROI
 
 // ===== AUDIO ENGINE =====
 let audioCtx;
-function getAudio(){if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();return audioCtx;}
+function getAudio(){if(!audioCtx){try{audioCtx=new(window.AudioContext||window.webkitAudioContext)()}catch(e){return null}}if(audioCtx&&audioCtx.state==='suspended'){audioCtx.resume().catch(()=>{})}return audioCtx;}
+function ensureAudio(){try{const ctx=getAudio();if(ctx&&ctx.state==='suspended'){ctx.resume().catch(()=>{})}}catch(e){}}
+if(typeof document!=='undefined'){
+  document.addEventListener('pointerdown',ensureAudio,{passive:true});
+  document.addEventListener('keydown',ensureAudio);
+}
 function playTone(freq,type='sine',dur=0.1,vol=0.3,decay=true){
   if(!STATE.soundOn)return;
   try{
-    const ctx=getAudio(),o=ctx.createOscillator(),g=ctx.createGain();
+    const ctx=getAudio();if(!ctx)return;
+    if(ctx.state==='suspended'){ensureAudio();return}
+    const o=ctx.createOscillator(),g=ctx.createGain();
     o.connect(g);g.connect(ctx.destination);
     o.type=type;o.frequency.setValueAtTime(freq,ctx.currentTime);
     g.gain.setValueAtTime(vol*STATE.volume,ctx.currentTime);
@@ -170,12 +177,19 @@ function buildAvatarStyles(){
   });
 }
 function dicebearUrl(style,seed){return`https://api.dicebear.com/7.x/${style}/svg?seed=${seed}&backgroundColor=transparent`}
+const FALLBACK_AVATAR='data:image/svg+xml;charset=UTF-8,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="80" height="80"><rect width="80" height="80" rx="40" fill="#7C3AED"/><text x="40" y="52" font-size="36" text-anchor="middle" fill="white">P</text></svg>');
+function attachAvatarFallback(img){
+  if(!img||img.dataset.fallbackAttached) return;
+  img.dataset.fallbackAttached='1';
+  img.addEventListener('error',()=>{if(img.src!==FALLBACK_AVATAR){img.src=FALLBACK_AVATAR}});
+}
 function loadAvatars(){
   const grid=document.getElementById('avatarGrid');grid.innerHTML='';
   for(let i=0;i<18;i++){
     const seed='user'+i,url=dicebearUrl(currentStyle,seed);
     const item=document.createElement('div');item.className='avatar-item'+(seed===selectedSeed?' selected':'');
     const img=document.createElement('img');img.src=url;img.alt='avatar';img.loading='lazy';
+    attachAvatarFallback(img);
     item.appendChild(img);
     item.onclick=()=>{
       selectedSeed=seed;currentAvatarUrl=url;
@@ -339,7 +353,10 @@ function getRankClass(name){return{ROOKIE:'rank-rookie',PLAYER:'rank-player',PRO
 function loadHub(){
   document.getElementById('navName').textContent=STATE.name;
   document.getElementById('navBest').textContent=Math.max(...Object.values(STATE.bestScores),0);
-  document.getElementById('hubAvatar').src=STATE.avatar;
+  const hubAv=document.getElementById('hubAvatar');
+  attachAvatarFallback(hubAv);
+  hubAv.src=STATE.avatar||currentAvatarUrl||FALLBACK_AVATAR;
+  attachAvatarFallback(document.getElementById('selectedAvatarImg'));
   document.getElementById('heroName').textContent=STATE.name;
   const rank=getRank();
   const badge=document.getElementById('rankBadge');
