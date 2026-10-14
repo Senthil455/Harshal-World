@@ -2697,10 +2697,12 @@ GAMES.zombie = {
     if(!gameRunning || gamePaused) return;
     e.preventDefault();
     const rect = gameCanvas.getBoundingClientRect();
-    // Map CSS pixels to canvas backing pixels so aim stays correct
-    // after resize or on high-DPI screens.
-    const scaleX = rect.width ? (gameCanvas.width / rect.width) : 1;
-    const scaleY = rect.height ? (gameCanvas.height / rect.height) : 1;
+    // Map CSS pixels to game pixels so aim stays correct
+    // after resize or on high-DPI screens. Uses css size when available.
+    const baseW = gameCanvas._cssW || gameCanvas.width;
+    const baseH = gameCanvas._cssH || gameCanvas.height;
+    const scaleX = rect.width ? (baseW / rect.width) : 1;
+    const scaleY = rect.height ? (baseH / rect.height) : 1;
     let cx, cy;
     if(e.touches && e.touches.length > 0) {
       cx = (e.touches[0].clientX - rect.left) * scaleX; cy = (e.touches[0].clientY - rect.top) * scaleY;
