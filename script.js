@@ -74,7 +74,8 @@ const SFX={
 // ===== PARTICLE BACKGROUND =====
 const pbCanvas=document.getElementById('particle-bg');
 const pbCtx=pbCanvas?pbCanvas.getContext('2d'):null;
-let particles=[],mouse={x:0,y:0};
+let particles=[],mouse={x:0,y:0},pbRaf=null,resizeTimer=null;
+const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 function resizeParticles(){
   if(!pbCanvas)return;
   pbCanvas.width=window.innerWidth;pbCanvas.height=window.innerHeight
@@ -82,7 +83,9 @@ function resizeParticles(){
 function initParticles(){
   if(!pbCanvas)return;
   particles=[];
-  const n=Math.min(80,Math.floor(window.innerWidth*window.innerHeight/12000));
+  const base=Math.floor(window.innerWidth*window.innerHeight/12000);
+  const cap=(typeof gameRunning!=='undefined'&&gameRunning)?40:80;
+  const n=Math.min(reduceMotion?0:cap,base);
   for(let i=0;i<n;i++)particles.push({
     x:Math.random()*pbCanvas.width,y:Math.random()*pbCanvas.height,
     vx:(Math.random()-.5)*.4,vy:(Math.random()-.5)*.4,
@@ -93,8 +96,8 @@ function drawParticles(){
   if(!pbCtx||!pbCanvas)return;
   pbCtx.clearRect(0,0,pbCanvas.width,pbCanvas.height);
   particles.forEach(p=>{
-    const dx=p.x-mouse.x,dy=p.y-mouse.y,dist=Math.sqrt(dx*dx+dy*dy);
-    if(dist<100){p.vx+=dx/dist*.05;p.vy+=dy/dist*.05}
+    const dx=p.x-mouse.x,dy=p.y-mouse.y,distSq=dx*dx+dy*dy;
+    if(distSq<10000&&distSq>0.25){const dist=Math.sqrt(distSq);p.vx+=dx/dist*.05;p.vy+=dy/dist*.05}
     p.vx*=.99;p.vy*=.99;
     p.x+=p.vx;p.y+=p.vy;
     if(p.x<0||p.x>pbCanvas.width)p.vx*=-1;
@@ -102,23 +105,37 @@ function drawParticles(){
     pbCtx.beginPath();pbCtx.arc(p.x,p.y,p.r,0,Math.PI*2);
     pbCtx.fillStyle=`rgba(124,58,237,${p.alpha})`;pbCtx.fill();
   });
+  const LINK=120,LINK_SQ=LINK*LINK;
   for(let i=0;i<particles.length;i++){
     for(let j=i+1;j<particles.length;j++){
       const dx=particles[i].x-particles[j].x,dy=particles[i].y-particles[j].y;
-      const d=Math.sqrt(dx*dx+dy*dy);
-      if(d<120){
+      const dSq=dx*dx+dy*dy;
+      if(dSq<LINK_SQ){
+        const d=Math.sqrt(dSq);
         pbCtx.beginPath();pbCtx.moveTo(particles[i].x,particles[i].y);
         pbCtx.lineTo(particles[j].x,particles[j].y);
-        pbCtx.strokeStyle=`rgba(124,58,237,${.15*(1-d/120)})`;
+        pbCtx.strokeStyle=`rgba(124,58,237,${.15*(1-d/LINK)})`;
         pbCtx.lineWidth=.5;pbCtx.stroke();
       }
     }
   }
-  requestAnimationFrame(drawParticles);
+  pbRaf=null;
+  if(!document.hidden && !reduceMotion) pbRaf=requestAnimationFrame(drawParticles);
+}
+function startParticles(){
+  if(reduceMotion||document.hidden) return;
+  if(!pbRaf) pbRaf=requestAnimationFrame(drawParticles);
+}
+function stopParticles(){
+  if(pbRaf) cancelAnimationFrame(pbRaf);
+  pbRaf=null;
+}
+if(typeof document!=='undefined'&&document.addEventListener){
+  document.addEventListener('visibilitychange',()=>{if(document.hidden){stopParticles()}else{startParticles()}});
 }
 window.addEventListener('mousemove',e=>{mouse.x=e.clientX;mouse.y=e.clientY});
 resizeParticles();initParticles();drawParticles();
-window.addEventListener('resize',()=>{resizeParticles();initParticles()});
+window.addEventListener('resize',()=>{if(resizeTimer)clearTimeout(resizeTimer);resizeTimer=setTimeout(()=>{resizeParticles();initParticles();startParticles()},150)});
 
 // ===== LOADING =====
 function runLoading(){
