@@ -2751,17 +2751,20 @@ GAMES.zombie = {
       this.spawnZombie();
     }
 
-    this.bullets.forEach((b, i) => {
+    for(let i=this.bullets.length-1;i>=0;i--){
+      const b=this.bullets[i];
       b.x += b.vx; b.y += b.vy;
       if(b.x < 0 || b.x > W || b.y < 0 || b.y > H) this.bullets.splice(i, 1);
-    });
+    }
 
-    this.particles.forEach((pt, i) => {
+    for(let i=this.particles.length-1;i>=0;i--){
+      const pt=this.particles[i];
       pt.x += pt.vx; pt.y += pt.vy; pt.life -= 0.05;
       if(pt.life <= 0) this.particles.splice(i, 1);
-    });
+    }
 
-    this.zombies.forEach((z, i) => {
+    for(let i=this.zombies.length-1;i>=0;i--){
+      const z=this.zombies[i];
       const zdx = (p.x + 16) - (z.x + 16);
       const zdy = (p.y + 16) - (z.y + 16);
       const dist = Math.sqrt(zdx*zdx + zdy*zdy);
@@ -2772,9 +2775,9 @@ GAMES.zombie = {
         this.lives--; setLives(this.lives); SFX.hit(); screenShake();
         this.zombies.splice(i, 1);
         this.spawnParticles(p.x+16, p.y+16, '#ff0000');
-        if(this.lives <= 0) { this.stop(); endGame(this.score, 'zombie'); }
+        if(this.lives <= 0) { this.stop(); endGame(this.score, 'zombie'); return; }
       }
-    });
+    }
 
     // bullets hit zombies
     for(let i = this.bullets.length - 1; i >= 0; i--) {
