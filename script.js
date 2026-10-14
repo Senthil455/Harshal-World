@@ -907,10 +907,22 @@ function setLives(n){
   for(let i=0;i<Math.max(0,n);i++)hearts+='❤️';
   for(let i=n;i<max;i++)hearts+='🖤';
   document.getElementById('hudLives').textContent=hearts;
+  // Clear the space-only XP chip when another game uses the HUD.
+  try{
+    if(typeof currentGame!=='undefined' && currentGame!=='space'){
+      const xpEl=document.getElementById('hudXp');
+      if(xpEl) xpEl.innerHTML='';
+    }
+  }catch(e){}
 }
 function updateXPDisplay(xp){
   const xpPercent=Math.min(100,Math.floor((xp/50)*100));
-  document.getElementById('hudLives').innerHTML=`<div style="text-align:center"><div style="font-size:12px;color:#EC4899;font-weight:bold;margin-bottom:4px">💎 XP</div><div style="background:#EF4444;height:6px;width:100px;border:2px solid #FFF;border-radius:3px;margin:0 auto;position:relative;overflow:hidden"><div style="background:#22C55E;height:100%;width:${xpPercent}%;transition:width 0.2s"></div></div><div style="font-size:10px;color:#FFF;margin-top:2px">${xp}/50</div></div>`;
+  const xpEl=document.getElementById('hudXp')||document.getElementById('hudLives');
+  if(document.getElementById('hudXp')){
+    xpEl.innerHTML=`<div style="font-size:10px;color:#EC4899;font-weight:bold">XP ${xp}/50</div><div style="background:#EF4444;height:6px;width:90px;border:1px solid #FFF;border-radius:3px;margin:2px auto 0;overflow:hidden"><div style="background:#22C55E;height:100%;width:${xpPercent}%;transition:width 0.2s"></div></div>`;
+  }else{
+    xpEl.innerHTML=`<div style="text-align:center"><div style="font-size:12px;color:#EC4899;font-weight:bold;margin-bottom:4px">XP</div><div style="background:#EF4444;height:6px;width:100px;border:2px solid #FFF;border-radius:3px;margin:0 auto;position:relative;overflow:hidden"><div style="background:#22C55E;height:100%;width:${xpPercent}%;transition:width 0.2s"></div></div><div style="font-size:10px;color:#FFF;margin-top:2px">${xp}/50</div></div>`;
+  }
 }
 function setScore(n){document.getElementById('hudScore').textContent=n}
 
@@ -955,7 +967,7 @@ GAMES.space={
     this.puMsg='';this.puMsgTimer=0;this.bombFlash=0;this.lastMilestone=0;this.surpriseFlash=0;
     this.player={x:W/2,y:H-80,w:64,h:64,vx:0,vy:0,acc:1.2,fric:0.88,maxSpd:12,invincible:0,xp:0};
     this.stars=Array.from({length:80},()=>({x:Math.random()*W,y:Math.random()*H,s:Math.random()*2+.5,v:Math.random()*.8+.2}));
-    setScore(0);updateXPDisplay(0);resetCombo();
+    setScore(0);setLives(5);updateXPDisplay(0);resetCombo();
     gameLoop=requestAnimationFrame(()=>this.loop());
   },
 
