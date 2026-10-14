@@ -1020,15 +1020,15 @@ GAMES.space={
       enemy.vx=fromLeft?spd*1.5:-spd*1.5;
       enemy.targetX=0;
     }else if(mt==='orbit'){
-      enemy.x=Math.random()*(W-64)+32;
+      enemy.x=Math.random()*Math.max(1,(W-enemy.w));
       enemy.y=-32;
-      enemy.orbitX=enemy.x;
+      enemy.orbitX=Math.max(0,Math.min(W-enemy.w,enemy.x));
       enemy.orbitY=100+Math.random()*150;
       enemy.orbitRadius=30+Math.random()*40;
       enemy.orbitDuration=150+Math.random()*100;
       enemy.vx=0;
     }else{
-      enemy.x=Math.random()*(W-32);
+      enemy.x=Math.random()*Math.max(1,(W-enemy.w));
       enemy.y=-32;
       enemy.baseX=enemy.x;
       enemy.vx=(Math.random()-.5)*2;
@@ -1042,7 +1042,7 @@ GAMES.space={
     const type=types[Math.floor(Math.random()*types.length)];
     const info=POWERUP_TYPES[type];
     this.powerups.push({
-      x:Math.random()*(W-40)+20,y:-30,w:30,h:30,vy:1.2,
+      x:Math.random()*Math.max(1,(W-30)),y:-30,w:30,h:30,vy:1.2,
       type,emoji:info.emoji,color:info.color,label:info.label,
       bobPhase:Math.random()*Math.PI*2,frame:0
     });
@@ -1102,11 +1102,13 @@ GAMES.space={
       e.frame++;e.shootCooldown--;
       if(e.moveType==='zigzag'){
         e.x=e.baseX+Math.sin(e.frame*e.frequency)*e.amplitude;
+        e.x=Math.max(0,Math.min(W-e.w,e.x));
         e.y+=e.vy;
       }else if(e.moveType==='orbit'){
         if(e.frame<e.orbitDuration){
           e.y+=(e.orbitY-e.y)*0.05;
           e.x=e.orbitX+Math.cos(e.frame*0.05)*e.orbitRadius;
+          e.x=Math.max(0,Math.min(W-e.w,e.x));
         }else{
           if(e.frame===Math.floor(e.orbitDuration)){
             const dx=(p.x+p.w/2)-(e.x+e.w/2);
@@ -1125,7 +1127,8 @@ GAMES.space={
           e.y+=ds.speed*2;
         }
       }else{
-        e.x+=e.vx;if(e.x<0||e.x>W-32)e.vx*=-1;
+        e.x+=e.vx;if(e.x<0||e.x>W-e.w)e.vx*=-1;
+        e.x=Math.max(0,Math.min(W-e.w,e.x));
         e.y+=e.vy;
       }
 
