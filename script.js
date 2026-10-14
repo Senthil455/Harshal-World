@@ -1456,7 +1456,11 @@ GAMES.flappy = {
     const W = gameCanvas.width, H = gameCanvas.height;
     const validTypes = ['heart', 'shield', 'electric'];
     const pType = validTypes.includes(type) ? type : validTypes[Math.floor(Math.random() * validTypes.length)];
-    const randPipe = this.pipes[Math.floor(Math.random() * Math.min(3, this.pipes.length))];
+    const birdX = this.bird ? this.bird.x : 0;
+    const ahead = this.pipes.filter(p => p.x > birdX);
+    const pool = ahead.length ? ahead : this.pipes.slice(-1);
+    if (!pool.length) return;
+    const randPipe = pool[Math.floor(Math.random() * pool.length)];
     if (!randPipe) return;
     this.powerups.push({ x: randPipe.x + randPipe.w / 2 - 15, y: (randPipe.top + randPipe.bottom) / 2 - 15, w: 30, h: 30, type: pType, frame: 0, collected: false });
   },
